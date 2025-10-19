@@ -1,11 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://b56vh0ff545sm"]
+[gd_scene load_steps=5 format=3 uid="uid://b56vh0ff545sm"]
 
-[ext_resource type="PackedScene" uid="uid://22whn6ckmiah" path="res://world/garden.tscn" id="1_0xm2m"]
-[ext_resource type="PackedScene" uid="uid://cfrrtvrc5mm41" path="res://player/garden_player.tscn" id="2_h2yge"]
+[ext_resource type="Script" path="res://main.gd" id="1_main"]
+[ext_resource type="PackedScene" path="res://world/garden.tscn" id="2_garden"]
+[ext_resource type="Script" path="res://world/plant_renderer.gd" id="3_pr"]
 
 [node name="Main" type="Node2D"]
+script = ExtResource("1_main")
 
-[node name="garden" parent="." instance=ExtResource("1_0xm2m")]
-position = Vector2(-80, -82)
+[node name="GameMap" parent="." instance=ExtResource("2_garden")]
 
-[node name="Player" parent="." instance=ExtResource("2_h2yge")]
+[node name="Entities" type="Node2D" parent="."]
+
+[node name="PlantRenderer" type="Node2D" parent="."]
+script = ExtResource("3_pr")
+
+[node name="MultiMeshInstance2D" type="MultiMeshInstance2D" parent="PlantRenderer"]

@@ -12,14 +12,13 @@ config_version=5
 
 config/name="Meow Garden"
 config/version="0.0.1"
-run/main_scene="uid://22whn6ckmiah"
+run/main_scene="res://main.tscn"
 config/features=PackedStringArray("4.5", "Mobile")
 config/icon="res://icon.svg"
 
 [autoload]
 
 EntityManager="*res://core/entity_manager.gd"
-TurnManager="*res://core/turn_manager.gd"
 GardenTurnManager="*res://core/garden_turn_manager.gd"
 
 [display]
