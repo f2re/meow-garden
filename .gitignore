@@ -1,0 +1,16 @@
+# Godot 4+ specific ignores
+# This directory contains imported assets and other generated files.
+# It is generally not recommended to commit this directory to version control.
+.godot/
+
+# Android build directory
+/android/
+
+# Resource unique identifiers. These are generated locally and can cause conflicts.
+*.uid
+
+# Imported file metadata. These are also generated locally.
+*.import
+
+# User-specific editor settings
+.vscode/
