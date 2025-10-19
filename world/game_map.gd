@@ -5,10 +5,12 @@ extends Node2D
 ## Должен быть прикреплен к Node2D с дочерним TileMap.
 
 @onready var tilemap: TileMap = $TileMap
+@onready var collisions_root: Node2D = $Collisions
 
 # Настройте ID источника тайлов в TileSet (см. world/garden_tileset.tres -> sources/3)
 const TILESET_SOURCE_ID = 3
 const TILE_LAYER = 0
+const TILE_SIZE = 16
 
 # Координаты атласа для каждого типа тайла
 const TILE_GRASS_COORD = Vector2i(0, 0)
@@ -23,37 +25,61 @@ var map_height: int
 
 # Словарь для сопоставления типа тайла с его атласными координатами
 var tile_coords = {
-	GardenGenerator.TileType.GRASS: TILE_GRASS_COORD,
-	GardenGenerator.TileType.WATER: TILE_WATER_COORD,
-	GardenGenerator.TileType.STONE_PATH: TILE_STONE_PATH_COORD,
-	GardenGenerator.TileType.SOIL: TILE_SOIL_COORD,
-	GardenGenerator.TileType.FENCE: TILE_FENCE_COORD,
+    GardenGenerator.TileType.GRASS: TILE_GRASS_COORD,
+    GardenGenerator.TileType.WATER: TILE_WATER_COORD,
+    GardenGenerator.TileType.STONE_PATH: TILE_STONE_PATH_COORD,
+    GardenGenerator.TileType.SOIL: TILE_SOIL_COORD,
+    GardenGenerator.TileType.FENCE: TILE_FENCE_COORD,
 }
 
 # Отрисовывает карту на основе данных из GardenGenerator
 func draw_map(data: PackedInt32Array, width: int, height: int):
-	map_data = data
-	map_width = width
-	map_height = height
-	
-	tilemap.clear()
-	for y in range(height):
-		for x in range(width):
-			var tile_type = map_data[y * width + x]
-			var atlas_coord = tile_coords.get(tile_type, TILE_GRASS_COORD) # По умолчанию трава
-			tilemap.set_cell(TILE_LAYER, Vector2i(x, y), TILESET_SOURCE_ID, atlas_coord)
+    map_data = data
+    map_width = width
+    map_height = height
+    
+    tilemap.clear()
+    for y in range(height):
+        for x in range(width):
+            var tile_type = map_data[y * width + x]
+            var atlas_coord = tile_coords.get(tile_type, TILE_GRASS_COORD) # По умолчанию трава
+            tilemap.set_cell(TILE_LAYER, Vector2i(x, y), TILESET_SOURCE_ID, atlas_coord)
+    
+    # Перестраиваем коллизии на основе непроходимых тайлов
+    _rebuild_collisions()
 
 # Проверяет, является ли тайл непроходимым
 func is_impassable(x: int, y: int) -> bool:
-	if x < 0 or x >= map_width or y < 0 or y >= map_height:
-		return true # Границы карты непроходимы
-	
-	var tile_type = map_data[y * map_width + x]
-	return tile_type in [GardenGenerator.TileType.WATER, GardenGenerator.TileType.FENCE]
+    if x < 0 or x >= map_width or y < 0 or y >= map_height:
+        return true # Границы карты непроходимы
+    
+    var tile_type = map_data[y * map_width + x]
+    return tile_type in [GardenGenerator.TileType.WATER, GardenGenerator.TileType.FENCE]
 
 # Проверяет, можно ли сажать на данном тайле
 func is_soil(x: int, y: int) -> bool:
-	if x < 0 or x >= map_width or y < 0 or y >= map_height:
-		return false
-	
-	return map_data[y * map_width + x] == GardenGenerator.TileType.SOIL
+    if x < 0 or x >= map_width or y < 0 or y >= map_height:
+        return false
+    
+    return map_data[y * map_width + x] == GardenGenerator.TileType.SOIL
+
+# Перестраивает физические коллизии на основе непроходимых тайлов
+func _rebuild_collisions():
+    # Очищаем предыдущие ноды коллизий
+    for child in collisions_root.get_children():
+        child.queue_free()
+    
+    # Создаем один StaticBody2D и добавляем в него много CollisionShape2D
+    var static_body := StaticBody2D.new()
+    static_body.name = "MapStaticBody"
+    collisions_root.add_child(static_body)
+    
+    for y in range(map_height):
+        for x in range(map_width):
+            if is_impassable(x, y):
+                var shape := CollisionShape2D.new()
+                var rect := RectangleShape2D.new()
+                rect.size = Vector2(TILE_SIZE, TILE_SIZE)
+                shape.shape = rect
+                shape.position = Vector2(x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2)
+                static_body.add_child(shape)
